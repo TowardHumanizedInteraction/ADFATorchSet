@@ -6,6 +6,7 @@ import pandas as pd
 import os
 
 from scipy.io import wavfile
+from shutil import copyfile
 from glob import glob
 from tqdm import tqdm
 
@@ -101,3 +102,4 @@ def extract_metadata( src: str ):
     df[ 'audio' ] = df[ 'audio' ].apply( lambda x: os.path.relpath( x, src ) )
 
     df.to_csv( os.path.join( src, 'metadata.csv' ) )
+    copyfile( './base.csv', os.path.join( src, 'base.csv' ) )
