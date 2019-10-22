@@ -93,7 +93,7 @@ def download_ravdess( dst : str ) -> None:
         os.makedirs( dst )
 
     url  = '{2}/Video_{0}_Actor_{1:02d}.zip'
-    name = './ravdess/Video_{0}_Actor_{1:02d}.zip'
+    name = 'Video_{0}_Actor_{1:02d}.zip'
 
     pbar = tqdm( range( 24 ), desc = 'Downloading Dataset Actor [00/24]' )
     for i in pbar:
@@ -105,8 +105,8 @@ def download_ravdess( dst : str ) -> None:
 
         speech      = url.format( 'Speech', id, URL_RAVDESS )
         song        = url.format( 'Song', id, URL_RAVDESS )
-        speech_path = name.format( 'Speech', id )
-        song_path   = name.format( 'Song', id )
+        speech_path = os.path.join( dst, name.format( 'Speech', id ) )
+        song_path   = os.path.join( dst, name.format(   'Song', id ) )
 
         pbar.set_postfix( action = 'downloading speech and song' )
         os.system( f'cd { dst } && wget { speech } && wget { song }' )
