@@ -8,7 +8,10 @@ if __name__ == '__main__':
 
     from adfatorchset.download import download_ravdess
     from adfatorchset.metadata import extract_metadata
+    
     from adfatorchset.download import download_3DDFA
+    download_3DDFA( )
+    
     from adfatorchset.extract import extract_dataset
     from adfatorchset.dfa import extract_3ddfa
 
@@ -59,8 +62,6 @@ if __name__ == '__main__':
         action = 'store_true'
     )
     args = parser.parse_args( )
-
-    download_3DDFA( )
 
     if args.ravdess:
         download_ravdess( args.input )
