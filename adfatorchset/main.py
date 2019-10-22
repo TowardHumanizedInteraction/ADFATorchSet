@@ -6,11 +6,11 @@ to download and generate the dataset for the ADFA project.
 if __name__ == '__main__':
     import argparse
 
-    from adfaset.download import download_ravdess
-    from adfaset.metadata import extract_metadata
-    from adfaset.download import download_3DDFA
-    from adfaset.extract import extract_dataset
-    from adfaset.dfa import extract_3ddfa
+    from adfatorchset.download import download_ravdess
+    from adfatorchset.metadata import extract_metadata
+    from adfatorchset.download import download_3DDFA
+    from adfatorchset.extract import extract_dataset
+    from adfatorchset.dfa import extract_3ddfa
 
     parser = argparse.ArgumentParser( )
     parser.add_argument(
