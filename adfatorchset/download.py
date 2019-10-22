@@ -92,7 +92,7 @@ def download_ravdess( dst : str ) -> None:
     if not os.path.isdir( dst ):
         os.makedirs( dst )
 
-    url  = f'{ URL_RAVDESS }/Video_{0}_Actor_{1:02d}.zip'
+    url  = '{ URL_RAVDESS }/Video_{0}_Actor_{1:02d}.zip'
     name = './ravdess/Video_{0}_Actor_{1:02d}.zip'
 
     pbar = tqdm( range( 24 ), desc = 'Downloading Dataset Actor [00/24]' )
