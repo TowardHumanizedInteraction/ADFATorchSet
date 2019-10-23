@@ -246,12 +246,16 @@ def extract_3ddfa( src: str, batch_size: int = 16, cuda: bool = True ) -> None:
                 Enable GPU for faster inference.
 
     """
-    actors = os.listdir( src )
+    actors = [ 
+        actor
+        for actor in os.listdir( src ) \
+        if os.path.isdir( os.path.join( src, actor ) )
+    ]
 
-    a_pbar = tqdm( actors, desc = 'Actor' )
+    a_pbar = tqdm( sorted( actors ), desc = 'Actor' )
     for actor in a_pbar:
         sequences = [ 
-            os.path.join( os.path.join( src, actor ), seq )
+            seq
             for seq in os.listdir( os.path.join( src, actor ) ) \
             if os.path.isdir( os.path.join( os.path.join( src, actor ), seq ) )
         ]
