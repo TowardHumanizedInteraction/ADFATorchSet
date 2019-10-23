@@ -251,9 +251,9 @@ def extract_3ddfa( src: str, batch_size: int = 16, cuda: bool = True ) -> None:
     a_pbar = tqdm( actors, desc = 'Actor' )
     for actor in a_pbar:
         sequences = [ 
-            seq
+            os.path.join( os.path.join( src, actor ), seq )
             for seq in os.listdir( os.path.join( src, actor ) ) \
-            if os.path.isdir( os.path.join( src, actor ) )
+            if os.path.isdir( os.path.join( os.path.join( src, actor ), seq ) )
         ]
 
         for sequence in sorted( sequences ):
