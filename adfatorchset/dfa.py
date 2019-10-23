@@ -250,7 +250,11 @@ def extract_3ddfa( src: str, batch_size: int = 16, cuda: bool = True ) -> None:
 
     a_pbar = tqdm( actors, desc = 'Actor' )
     for actor in a_pbar:
-        sequences = os.listdir( os.path.join( src, actor ) )
+        sequences = [ 
+            seq
+            for seq in os.listdir( os.path.join( src, actor ) ) \
+            if os.path.isdir( os.path.join( src, actor ) )
+        ]
 
         for sequence in sorted( sequences ):
             a_pbar.set_postfix( name = actor, seq = sequence )
@@ -269,7 +273,8 @@ def extract_3ddfa( src: str, batch_size: int = 16, cuda: bool = True ) -> None:
                     predict_dense( params[ i ], imgs_roi[ i ] )
                     for i in range( len( params ) )
                 ]
-            except:
+            except Exception as e:
+                print( f'Exception encountered while trying to process faces ! { e }')
                 continue
 
 
