@@ -86,7 +86,11 @@ def extract_metadata( src: str ):
     """
 
     df     = pd.DataFrame( { key: [ ] for key in KEYS } )
-    actors = [ os.path.join( src, actor ) for actor in os.listdir( src ) ]
+    actors = [ 
+        os.path.join( src, actor ) 
+        for actor in os.listdir( src )
+        if os.path.isdir( os.path.join( src, actor ) )
+    ]
 
     for actor in tqdm( sorted( actors ), desc = 'Generating metadata' ):
         sequences = [ os.path.join( actor, seq ) for seq in os.listdir( actor ) ]
