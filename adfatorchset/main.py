@@ -8,25 +8,24 @@ if __name__ == '__main__':
 
     from adfatorchset.download import download_ravdess
     from adfatorchset.metadata import extract_metadata
-    
+
     from adfatorchset.download import download_3DDFA
     download_3DDFA( )
-    
+
     from adfatorchset.extract import extract_dataset
+    from adfatorchset.preprocess import Preprocess
     from adfatorchset.dfa import extract_3ddfa
 
     parser = argparse.ArgumentParser( )
     parser.add_argument(
         '-i', '--input',
         help     = 'Input folder to find the video dataset',
-        type     = str,
-        required = True
+        type     = str
     )
     parser.add_argument(
         '-o', '--output',
         help     = 'Output folder to save the extracted content in',
-        type     = str,
-        required = True
+        type     = str
     )
     parser.add_argument(
         '-f', '--fps',
@@ -61,21 +60,35 @@ if __name__ == '__main__':
         help   = 'Download RAVDESS dataset',
         action = 'store_true'
     )
+    parser.add_argument(
+        '-p', '--preprocess',
+        help   = 'Preprocess faces to project into frontal facial plane',
+        action = 'store_true'
+    )
+    parser.add_argument(
+        '-x', '--no_extraction',
+        help   = 'No extraction needed (maybe to apply preprocess only)',
+        action = 'store_true'
+    )
     args = parser.parse_args( )
 
     if args.ravdess:
         download_ravdess( args.input )
 
-    extract_dataset(
-        args.input,
-        args.output,
-        fps     = args.fps,
-        sr      = args.sr,
-        verbose = args.verbose
-    )
-    extract_3ddfa(
-        args.output,
-        batch_size = args.batch_size,
-        cuda       = args.cuda
-    )
-    extract_metadata( args.output )
+    if not args.no_extraction:
+        extract_dataset(
+            args.input,
+            args.output,
+            fps     = args.fps,
+            sr      = args.sr,
+            verbose = args.verbose
+        )
+        extract_3ddfa(
+            args.output,
+            batch_size = args.batch_size,
+            cuda       = args.cuda
+        )
+        extract_metadata( args.output )
+
+    if args.preprocess:
+        Preprocess( )( args.output )
