@@ -46,6 +46,11 @@ if __name__ == '__main__':
         default = 32
     )
     parser.add_argument(
+        '-d', '--extract_dataset',
+        help   = 'Extract frames and audio from dataset',
+        action = 'store_true'
+    )
+    parser.add_argument(
         '-c', '--cuda',
         help   = 'Choose to perform 3D facial reconstruction on gpu',
         action = 'store_true'
