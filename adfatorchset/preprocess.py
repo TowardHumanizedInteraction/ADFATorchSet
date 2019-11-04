@@ -216,8 +216,8 @@ class Preprocess:
 
         for actor in tqdm( actors, desc = 'Preprocessing' ):
             m_actor = metadata[ metadata.actor == actor ]
-            base    = os.path.join( src, base[ base.actor == int( actor ) ].base.values[ 0 ] )
-            B       = self.preprocess( np.load( base )[ 'vertices' ], None )
+            B       = os.path.join( src, base[ base.actor == int( actor ) ].base.values[ 0 ] )
+            B       = self.preprocess( np.load( B )[ 'vertices' ], None )
 
             for id in sorted( m_actor.id.unique( ) ):
                 m_actor_id = m_actor[ m_actor.id == id ]
