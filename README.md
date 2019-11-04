@@ -19,7 +19,7 @@ pip3 install -r requirements.txt
 ## Usage
 
 ```bash
-python3 -m adfatorchset.main \
+python3 -m adfatorchset \
   -i input_dir \  # Input Directory to save the RAVDESS files
   -o output_dir \ # Output Director to save the extracted data
   -f 30 \         # Frame Rate for the frames extraction

@@ -228,7 +228,7 @@ class Preprocess:
                     path    = os.path.join( src, data.face.values[ 0 ] )
 
                     verts   = np.load( path )[ 'vertices' ]
-                    tri     = np.load( path )[ 'tri' ]
+                    tri     = np.load( path )[ 'triangles' ]
 
                     n_verts = self.preprocess( verts, p_verts )
                     p_verts = n_verts
