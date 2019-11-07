@@ -11,8 +11,8 @@ from adfatorchset.metadata import extract_metadata
 from adfatorchset.download import download_3DDFA
 download_3DDFA( )
 
+from adfatorchset.preprocess import preprocess_3ddfa
 from adfatorchset.extract import extract_dataset
-from adfatorchset.preprocess import Preprocess
 from adfatorchset.dfa import extract_3ddfa
 
 parser = argparse.ArgumentParser( )
@@ -95,4 +95,4 @@ if not args.no_extraction:
     extract_metadata( args.output )
 
 if args.preprocess:
-    Preprocess( )( args.output )
+    preprocess_3ddfa( args.output )

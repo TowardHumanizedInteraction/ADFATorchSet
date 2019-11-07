@@ -7,6 +7,8 @@ import pandas as pd
 import numpy as np
 import os
 
+from multiprocessing import Pool
+from typing import Tuple
 from tqdm import tqdm
 
 class Face:
@@ -35,202 +37,221 @@ class Face:
     RBEAR = 34908
     LBEAR = 19720
 
-class Preprocess:
-    """Preprocess
+def compute_X( face: Face, verts: np.ndarray ) -> np.ndarray:
+    """Compute X axis
 
-    Attributes
+    Parameters
     ----------
-    FACE: Face
-          Facial Keypoints
+    face : Face
+           Facial Keypoints
+    verts: np.ndarray
+           Face vertices
+
+    Returns
+    -------
+    X: np.ndarray
+       Computed X axis
     """
+    X1 = verts[ :, face.RTEAR ] - verts[ :, face.LTEAR ]
+    X1 = X1 / np.sqrt( ( X1 ** 2 ).sum( axis = 0 ) )
 
-    def __init__( self: 'Preprocess' ) -> None:
-        """Init
-        """
-        self.FACE = Face
+    X2 = verts[ :, face.RBEAR ] - verts[ :, face.LBEAR ]
+    X2 = X2 / np.sqrt( ( X2 ** 2 ).sum( axis = 0 ) )
 
-    def compute_X( self: 'Preprocess', verts: np.ndarray ) -> np.ndarray:
-        """Compute X axis
+    X  = ( X1 + X2 ) / 2
 
-        Parameters
-        ----------
-        verts: np.ndarray
-               Face vertices
+    return X
 
-        Returns
-        -------
-        X: np.ndarray
-           Computed X axis
-        """
-        X1 = verts[ :, self.FACE.RTEAR ] - verts[ :, self.FACE.LTEAR ]
-        X1 = X1 / np.sqrt( ( X1 ** 2 ).sum( axis = 0 ) )
+def compute_Z( face: Face, verts: np.ndarray ) -> np.ndarray:
+    """Compute Z axis
 
-        X2 = verts[ :, self.FACE.RBEAR ] - verts[ :, self.FACE.LBEAR ]
-        X2 = X2 / np.sqrt( ( X2 ** 2 ).sum( axis = 0 ) )
+    Parameters
+    ----------
+    face : Face
+           Facial Keypoints
+    verts: np.ndarray
+           Face vertices
 
-        X  = ( X1 + X2 ) / 2
+    Returns
+    -------
+    Z: np.ndarray
+       Computed Z axis
+    """
+    M = ( verts[ :, face.RBEAR ] + verts[ :, face.LBEAR ] ) * .5
 
-        return X
+    Z = verts[ :, face.NOSE ].mean( axis = 1 ) - M
+    Z = Z / np.sqrt( ( Z ** 2 ).sum( axis = 0 ) )
 
-    def compute_Z( self: 'Preprocess', verts: np.ndarray ) -> np.ndarray:
-        """Compute Z axis
+    return Z
 
-        Parameters
-        ----------
-        verts: np.ndarray
-               Face vertices
+def compute_Y( X: np.ndarray, Z: np.ndarray ) -> np.ndarray:
+    """Compute Y axis
 
-        Returns
-        -------
-        Z: np.ndarray
-           Computed Z axis
-        """
-        M = ( verts[ :, self.FACE.RBEAR ] + verts[ :, self.FACE.LBEAR ] ) * .5
+    Parameters
+    ----------
+    X: np.ndarray
+       Computed X axis
+    Z: np.ndarray
+       Computed Z axis
 
-        Z = verts[ :, self.FACE.NOSE ].mean( axis = 1 ) - M
-        Z = Z / np.sqrt( ( Z ** 2 ).sum( axis = 0 ) )
+    Returns
+    -------
+    Y: np.ndarray
+       Computed Y axis
+    """
+    Y = np.cross( Z, X )
+    Y = Y / np.sqrt( ( Y ** 2 ).sum( axis = 0 ) )
 
-        return Z
+    return Y
 
-    def compute_Y( self: 'Preprocess', X: np.ndarray, Z: np.ndarray ) -> np.ndarray:
-        """Compute Y axis
+def project( verts: np.ndarray ) -> np.ndarray:
+    """Compute X axis
 
-        Parameters
-        ----------
-        X: np.ndarray
-           Computed X axis
-        Z: np.ndarray
-           Computed Z axis
+    Parameters
+    ----------
+    verts: np.ndarray
+           Face vertices
 
-        Returns
-        -------
-        Y: np.ndarray
-           Computed Y axis
-        """
-        Y = np.cross( Z, X )
-        Y = Y / np.sqrt( ( Y ** 2 ).sum( axis = 0 ) )
+    Returns
+    -------
+    verts: np.ndarray
+           Facial vertices projected to the frontal facial plane.
+    """
+    W = np.array( [ 0, 0, 0, 1 ] )
 
-        return Y
+    X = compute_X( verts )
+    Z = compute_Z( verts )
+    Y = compute_Y( X, Z )
 
-    def project( self: 'Preprocess', verts: np.ndarray ) -> np.ndarray:
-        """Compute X axis
+    X = np.append( X, [ 0 ] )
+    Y = np.append( Y, [ 0 ] )
+    Z = np.append( Z, [ 0 ] )
 
-        Parameters
-        ----------
-        verts: np.ndarray
-               Face vertices
+    T = np.array( [ X, Y, Z, W ] ).T
 
-        Returns
-        -------
-        verts: np.ndarray
-               Facial vertices projected to the frontal facial plane.
-        """
-        W = np.array( [ 0, 0, 0, 1 ] )
+    return np.array( [
+        np.append( p, [ 1 ] ) @ T
+        for p in verts.T
+    ] )[ :, :3 ].T
 
-        X = self.compute_X( verts )
-        Z = self.compute_Z( verts )
-        Y = self.compute_Y( X, Z )
+def offset( face: Face, verts: np.ndarray ) -> np.ndarray:
+    """Offset to center
 
-        X = np.append( X, [ 0 ] )
-        Y = np.append( Y, [ 0 ] )
-        Z = np.append( Z, [ 0 ] )
+    Parameters
+    ----------
+    face : Face
+           Facial Keypoints
+    verts: np.ndarray
+           Face vertices
 
-        T = np.array( [ X, Y, Z, W ] ).T
+    Returns
+    -------
+    verts: np.ndarray
+           Facial vertices centered to the eyes.
+    """
+    C = .5 * ( verts[ :, face.REYE ] + verts[ :, face.LEYE ] )
 
-        return np.array( [
-            np.append( p, [ 1 ] ) @ T
-            for p in verts.T
-        ] )[ :, :3 ].T
+    return ( verts.T - C ).T
 
-    def offset( self: 'Preprocess', verts: np.ndarray ) -> np.ndarray:
-        """Offset to center
+def rescale( face: Face, p_verts: np.ndarray, n_verts: np.ndarray ) -> np.ndarray:
+    """Scale stabilization
 
-        Parameters
-        ----------
-        verts: np.ndarray
-               Face vertices
+    Parameters
+    ----------
+    face   : Face
+             Facial Keypoints
+    p_verts: np.ndarray
+             Previous Face vertices
+    n_verts: np.ndarray
+             Current Face vertices
 
-        Returns
-        -------
-        verts: np.ndarray
-               Facial vertices centered to the eyes.
-        """
-        C = .5 * ( verts[ :, self.FACE.REYE ] + verts[ :, self.FACE.LEYE ] )
+    Returns
+    -------
+    verts: np.ndarray
+           Facial vertices with stabilized scale.
+    """
+    p = np.abs( p_verts[ 0, face.RBEAR ] - p_verts[ 0, face.LBEAR ] )
+    n = np.abs( n_verts[ 0, face.RBEAR ] - n_verts[ 0, face.LBEAR ] )
 
-        return ( verts.T - C ).T
+    return ( n_verts.T * p / n ).T
 
-    def rescale( self: 'Preprocess', p_verts: np.ndarray, n_verts: np.ndarray ) -> np.ndarray:
-        """Scale stabilization
+def preprocess_one( verts: np.ndarray, p_verts: np.ndarray ) -> np.ndarray:
+    """Preprocess one Frame
 
-        Parameters
-        ----------
-        p_verts: np.ndarray
-                 Previous Face vertices
-        n_verts: np.ndarray
-                 Current Face vertices
+    Parameters
+    ----------
+    verts  : np.ndarray
+             Current Face vertices
+    p_verts: np.ndarray
+             Previous Face vertices
 
-        Returns
-        -------
-        verts: np.ndarray
-               Facial vertices with stabilized scale.
-        """
-        p = np.abs( p_verts[ 0, self.FACE.RBEAR ] - p_verts[ 0, self.FACE.LBEAR ] )
-        n = np.abs( n_verts[ 0, self.FACE.RBEAR ] - n_verts[ 0, self.FACE.LBEAR ] )
+    Returns
+    -------
+    verts: np.ndarray
+           Facial vertices transformed.
+    """
+    verts = project( verts )
+    verts = offset( verts )
 
-        return ( n_verts.T * p / n ).T
+    if p_verts is not None:
+        verts = rescale( p_verts, verts )
 
-    def preprocess( self: 'Preprocess', verts: np.ndarray, p_verts: np.ndarray ) -> np.ndarray:
-        """Scale stabilization
+    return verts.astype( np.float32 )
 
-        Parameters
-        ----------
-        verts  : np.ndarray
-                 Current Face vertices
-        p_verts: np.ndarray
-                 Previous Face vertices
+def preprocess_seq( params: Tuple ) -> None:
+    """Preprocess one Sequence
 
-        Returns
-        -------
-        verts: np.ndarray
-               Facial vertices transformed.
-        """
-        verts = self.project( verts )
-        verts = self.offset( verts )
+    Parameters
+    ----------
+    params: Tuple
+            metadata, m_actor, sr, actor, id, B from preprocess_3ddfa fun
+    """
+    metadata   = params[ 0 ]
+    m_actor    = params[ 1 ]
+    src        = params[ 2 ]
+    actor      = params[ 3 ]
+    id         = params[ 4 ]
+    B          = params[ 5 ]
 
-        if p_verts is not None:
-            verts = self.rescale( p_verts, verts )
+    m_actor_id = m_actor[ m_actor.id == id ]
+    p_verts    = B
 
-        return verts.astype( np.float32 )
+    for sub_id in sorted( m_actor_id.sub_id.unique( ) ):
+        data    = metadata[ ( metadata.actor == actor ) & ( metadata.id == id ) & ( metadata.sub_id == sub_id ) ]
+        path    = os.path.join( src, data.face.values[ 0 ] )
 
-    def __call__( self: 'Preprocess', src: str ) -> None:
-        """Call
+        verts   = np.load( path )[ 'vertices' ]
+        tri     = np.load( path )[ 'triangles' ]
 
-        Parameters
-        ----------
-        src: str
-             Source path to the extracted folder
-        """
-        base     = pd.read_csv( os.path.join( src, 'base.csv' ), sep = ';' )
-        metadata = pd.read_csv( os.path.join( src, 'metadata.csv' ), index_col = 0 )
-        actors   = metadata.actor.unique( )
+        n_verts = preprocess_one( verts, p_verts )
+        p_verts = n_verts
 
-        for actor in tqdm( actors, desc = 'Preprocessing' ):
-            m_actor = metadata[ metadata.actor == actor ]
-            B       = os.path.join( src, base[ base.actor == int( actor ) ].base.values[ 0 ] )
-            B       = self.preprocess( np.load( B )[ 'vertices' ], None )
+        np.savez( path, vertices = n_verts, triangles = tri  )
 
-            for id in sorted( m_actor.id.unique( ) ):
-                m_actor_id = m_actor[ m_actor.id == id ]
-                p_verts    = B
+def preprocess_3ddfa( src: str ) -> None:
+    """Call
 
-                for sub_id in sorted( m_actor_id.sub_id.unique( ) ):
-                    data    = metadata[ ( metadata.actor == actor ) & ( metadata.id == id ) & ( metadata.sub_id == sub_id ) ]
-                    path    = os.path.join( src, data.face.values[ 0 ] )
+    Parameters
+    ----------
+    src: str
+         Source path to the extracted folder
+    """
+    base     = pd.read_csv( os.path.join( src, 'base.csv' ), sep = ';' )
+    metadata = pd.read_csv( os.path.join( src, 'metadata.csv' ), index_col = 0 )
+    actors   = metadata.actor.unique( )
 
-                    verts   = np.load( path )[ 'vertices' ]
-                    tri     = np.load( path )[ 'triangles' ]
+    for actor in tqdm( actors, desc = 'Preprocessing Actor' ):
+        m_actor = metadata[ metadata.actor == actor ]
+        B       = os.path.join( src, base[ base.actor == int( actor ) ].base.values[ 0 ] )
+        B       = preprocess_one( np.load( B )[ 'vertices' ], None )
 
-                    n_verts = self.preprocess( verts, p_verts )
-                    p_verts = n_verts
-
-                    np.savez( path, vertices = n_verts, triangles = tri  )
+        with Pool( ) as pool:
+            ids     = sorted( m_actor.id.unique( ) )
+            iter    = [
+                ( metadata, m_actor, src, actor, id, B )
+                for id in ids
+            ]
+            n       = len( ids )
+            imap    = pool.imap_unordered( preprocess_seq, iter )
+            pbar    = tqdm( imap, total = n, desc = 'Preprocessing Sequence' )
+            _       = list( pbar )
