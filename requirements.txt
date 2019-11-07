@@ -7,3 +7,4 @@ dlib==19.18.0
 opencv-python>=3.4.3.18
 tqdm==4.36.1
 pandas==0.25.1
+CMake==3.13.3

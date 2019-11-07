@@ -10,7 +10,7 @@ It uses the RAVDESS Dataset [[1]] and the 3DDFA Facial Reconstructor [[2]] to ge
 The install consists of a simple git clone, installing ffmpeg and a pip3 command in order to install all dependencies ( may require to run as sudo )
 
 ```bash
-apt install ffmpeg python3-dev build-essential
+apt install ffmpeg python3-dev build-essential cmake
 git clone https://github.com/TowardHumanizedInteraction/ADFATorchSet.git
 cd ./ADMATORCHSET
 pip3 install -r requirements.txt
