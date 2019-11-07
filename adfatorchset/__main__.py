@@ -77,9 +77,12 @@ parser.add_argument(
 args = parser.parse_args( )
 
 if args.ravdess:
+    print( '-------------------> Download' )
     download_ravdess( args.input )
+    print( '\n' )
 
 if not args.no_extraction:
+    print( '-------------------> Extraction' )
     extract_dataset(
         args.input,
         args.output,
@@ -87,12 +90,21 @@ if not args.no_extraction:
         sr      = args.sr,
         verbose = args.verbose
     )
+    print( '\n' )
+
+    print( '-------------------> Computing Faces' )
     extract_3ddfa(
         args.output,
         batch_size = args.batch_size,
         cuda       = args.cuda
     )
+    print( '\n' )
+
+    print( '-------------------> Creating Metadata' )
     extract_metadata( args.output )
+    print( '\n' )
 
 if args.preprocess:
+    print( '-------------------> Preprocessing Faces' )
     preprocess_3ddfa( args.output )
+    print( '\n' )
