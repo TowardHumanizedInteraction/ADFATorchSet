@@ -229,7 +229,7 @@ def preprocess_seq( params: Tuple ) -> None:
         np.savez( path, vertices = n_verts, triangles = tri  )
 
 def preprocess_3ddfa( src: str ) -> None:
-    """Call
+    """Preprocess All the Extracted Dataset
 
     Parameters
     ----------
