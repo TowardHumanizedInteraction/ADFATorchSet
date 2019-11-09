@@ -104,11 +104,13 @@ def compute_Y( X: np.ndarray, Z: np.ndarray ) -> np.ndarray:
 
     return Y
 
-def project( verts: np.ndarray ) -> np.ndarray:
+def project( face: Face, verts: np.ndarray ) -> np.ndarray:
     """Compute X axis
 
     Parameters
     ----------
+    face : Face
+           Facial Keypoints
     verts: np.ndarray
            Face vertices
 
@@ -119,8 +121,8 @@ def project( verts: np.ndarray ) -> np.ndarray:
     """
     W = np.array( [ 0, 0, 0, 1 ] )
 
-    X = compute_X( verts )
-    Z = compute_Z( verts )
+    X = compute_X( face, verts )
+    Z = compute_Z( face, verts )
     Y = compute_Y( X, Z )
 
     X = np.append( X, [ 0 ] )
@@ -175,11 +177,13 @@ def rescale( face: Face, p_verts: np.ndarray, n_verts: np.ndarray ) -> np.ndarra
 
     return ( n_verts.T * p / n ).T
 
-def preprocess_one( verts: np.ndarray, p_verts: np.ndarray ) -> np.ndarray:
+def preprocess_one( face: Face, verts: np.ndarray, p_verts: np.ndarray ) -> np.ndarray:
     """Preprocess one Frame
 
     Parameters
     ----------
+    face   : Face
+             Facial Keypoints
     verts  : np.ndarray
              Current Face vertices
     p_verts: np.ndarray
@@ -190,11 +194,11 @@ def preprocess_one( verts: np.ndarray, p_verts: np.ndarray ) -> np.ndarray:
     verts: np.ndarray
            Facial vertices transformed.
     """
-    verts = project( verts )
-    verts = offset( verts )
+    verts = project( face, verts )
+    verts = offset( face, verts )
 
     if p_verts is not None:
-        verts = rescale( p_verts, verts )
+        verts = rescale( face, p_verts, verts )
 
     return verts.astype( np.float32 )
 
@@ -204,7 +208,7 @@ def preprocess_seq( params: Tuple ) -> None:
     Parameters
     ----------
     params: Tuple
-            metadata, m_actor, sr, actor, id, B from preprocess_3ddfa fun
+            metadata, m_actor, sr, actor, id, B, face from preprocess_3ddfa fun
     """
     metadata   = params[ 0 ]
     m_actor    = params[ 1 ]
@@ -212,6 +216,7 @@ def preprocess_seq( params: Tuple ) -> None:
     actor      = params[ 3 ]
     id         = params[ 4 ]
     B          = params[ 5 ]
+    face       = params[ 6 ]
 
     m_actor_id = m_actor[ m_actor.id == id ]
     p_verts    = B
@@ -223,7 +228,7 @@ def preprocess_seq( params: Tuple ) -> None:
         verts   = np.load( path )[ 'vertices' ]
         tri     = np.load( path )[ 'triangles' ]
 
-        n_verts = preprocess_one( verts, p_verts )
+        n_verts = preprocess_one( face, verts, p_verts )
         p_verts = n_verts
 
         np.savez( path, vertices = n_verts, triangles = tri  )
@@ -236,6 +241,7 @@ def preprocess_3ddfa( src: str ) -> None:
     src: str
          Source path to the extracted folder
     """
+    face     = Face( )
     base     = pd.read_csv( os.path.join( src, 'base.csv' ), sep = ';' )
     metadata = pd.read_csv( os.path.join( src, 'metadata.csv' ), index_col = 0 )
     actors   = metadata.actor.unique( )
@@ -248,7 +254,7 @@ def preprocess_3ddfa( src: str ) -> None:
         with Pool( ) as pool:
             ids     = sorted( m_actor.id.unique( ) )
             iter    = [
-                ( metadata, m_actor, src, actor, id, B )
+                ( metadata, m_actor, src, actor, id, B, face )
                 for id in ids
             ]
             n       = len( ids )
