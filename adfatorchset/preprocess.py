@@ -249,7 +249,7 @@ def preprocess_3ddfa( src: str ) -> None:
     for actor in tqdm( actors, desc = 'Preprocessing Actor' ):
         m_actor = metadata[ metadata.actor == actor ]
         B       = os.path.join( src, base[ base.actor == int( actor ) ].base.values[ 0 ] )
-        B       = preprocess_one( np.load( B )[ 'vertices' ], None )
+        B       = preprocess_one( face, np.load( B )[ 'vertices' ], None )
 
         with Pool( ) as pool:
             ids     = sorted( m_actor.id.unique( ) )
